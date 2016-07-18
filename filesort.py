@@ -12,7 +12,7 @@ SERIES_DIR = Path('TV Shows/')
 MUSIC_DIR  = Path('Music/')
 KEEP_ORIGINAL = True # Set false to remove from download directory
 AUDIO_FILES = ('wav', 'mp3', 'flac', 'ogg', 'm4a')
-VIDEO_FILES = ('mkv', 'avi', 'mp4',)
+VIDEO_FILES = ('mkv', 'avi', 'mp4', 'mov', 'mpeg', 'wmv', 'flv', 'm4v')
 
 # Set up logging
 logging.basicConfig(filename='/tmp/filesort.log', level=logging.DEBUG)
@@ -80,11 +80,8 @@ if torrent_path.isdir():
 else:
     raw_name = torrent_path.stem
 
-movie_re = None
-serie_re = re.compile('([\w.]+)(?=(S\d\dE\d\d))(\2)*')
-music_re = None
-
 # Test if this is a TV series
+serie_re = re.compile('([\w.]+)(?=(S\d\dE\d\d))(\2)*')
 series_match = serie_re.match(raw_name)
 if series_match:
     series_name = series_match.group(1).replace('.', ' ').strip()
