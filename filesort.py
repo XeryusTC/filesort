@@ -73,7 +73,7 @@ def sort_episode(series_name, episode, torrent_path):
 
         logging.info('Copying single file to destination: {}'.format(
             dest_file))
-        copy_file(torrent_path, dest)
+        copy_file(torrent_path, dest_file)
 
 def find_media(name, media=ANY_MEDIA):
     search = tmdb.Search()
@@ -118,7 +118,7 @@ def deluge(torrent_id, torrent_name, save_path):
         raw_name = torrent_path.stem
 
     # Test if this is a TV series
-    serie_re = re.compile(r'([\w.]+)(?=(S\d{2}E\d{2}))(\2)*')
+    serie_re = re.compile(r'([\w.]+)(?=(S\d{2}E\d{2}|\d{1,2}x{\d{1,2}))(\2)*')
     series_match = serie_re.match(raw_name)
     if series_match:
         series_name = series_match.group(1).replace('.', ' ').strip()
@@ -145,6 +145,21 @@ def deluge(torrent_id, torrent_name, save_path):
         except MediaNotFoundInTMDBException:
             search = None
             name = series_name
+
+        # Normalise the episode number
+        episode_re = re.compile(r'\w?(\d+)\w?(\d+)')
+        episode_match = episode_re.match(episode)
+        if episode_match:
+            serie_nr = episode_match.group(1)
+            episode_nr = episode_match.group(2)
+            episode = 'S'
+            if len(serie_nr) < 2: # Series number is a single digit
+                episode += '0'
+            episode += serie_nr + 'E'
+            if len(episode_nr) < 2: # Episode number is a single digit
+                episode += '0'
+            episode += episode_nr
+            logging.debug('Series number updated to {}'.format(episode))
 
         logging.info('Torrent is TV series: {}, episode {}'.format(name,
                 episode))
