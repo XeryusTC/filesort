@@ -60,28 +60,20 @@ def sort_episode(series_name, episode, torrent_path):
         if len(files) == 0:
             logging.critical('No video file found in series directory!')
             sys.exit(1)
-        elif len(files) == 1:
-            dest_file = Path(series_dir,
-                series_name + ' - ' + episode + files[0].ext)
-            logging.info('Copying single file to destination: {}'.format(
-                dest_file))
-            copy_file(files[0], dest_file)
-        else:
-            # There are multiple video files in the directory
-            logging.warning('Copying multiple single episode files not' +
-                'implemented yet')
-            sys.exit(0)
+        src_file = files[0]
+        dst_file = Path(series_dir,
+            series_name + ' - ' + episode + files[0].ext)
     else:
         if torrent_path.ext not in VIDEO_FILES:
             logging.warning('Unknown video file extention: {}'.format(
                 torrent_path.ext))
-
-        dest_file = Path(series_dir, series_name, ' - ', episode,
+        src_file = torrent_path
+        dst_file = Path(series_dir, series_name, ' - ', episode,
             torrent_path.ext)
 
-        logging.info('Copying single file to destination: {}'.format(
-            dest_file))
-        copy_file(torrent_path, dest_file)
+    logging.info('Copying single file to destination: {}'.format(
+            dst_file))
+    copy_file(src_file, dst_file)
 
 def find_media(name, media=ANY_MEDIA):
     search = tmdb.Search()
@@ -172,6 +164,8 @@ def deluge(torrent_id, torrent_name, save_path):
         logging.info('Torrent is TV series: {}, episode {}'.format(name,
                 episode))
         sort_episode(name, episode, torrent_path)
+        logging.info('Done processing torrent')
+        sys.exit(0)
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
