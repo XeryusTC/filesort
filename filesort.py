@@ -175,29 +175,50 @@ def deluge(torrent_id, torrent_name, save_path):
         likely_name = likely_name.split(sep, 1)[0]
     logging.debug('Reduced name from "{}" to "{}"'.format(raw_name,
         likely_name))
+    logging.info('Determining if movie/series based on file name')
 
     try:
         search, name = find_media(likely_name)
 
-        # If there are a lot of results try to narrow them down by
-        # determining the date from the file
         results = search.results
-        if results > 1:
+        # If there are a lot of results try to narrow them down by
+        # removing those which have different titles than what the original
+        tmp = []
+        for result in results:
+            name = result['title'] if 'title' in result else result['name']
+            if all([w in raw_name.lower() for w in name.lower().strip()]):
+                logging.debug('Keeping matching name "{}"'.format(name))
+                tmp.append(result)
+            else:
+                logging.debug('Mismatching name "{}", removing'.format(name))
+        result = tmp
+
+        # If there are still too many titles remove those with dates that
+        # don't match with those in the filename
+        if len(results) > 1:
             date_match = re.search(re.compile(r'(\d{4})'), raw_name)
             if date_match:
                 date = date_match.group(1)
+                tmp = []
                 for result in results:
-                    if ('release_date' in result.keys() and \
+                    if ('release_date' in result and \
                             (date in result['release_date'] or \
                                 result['release_date'] == '')) or \
-                        ('first_air_date' in result.keys() and \
+                        ('first_air_date' in result and \
                             (date in result['first_air_date'] or \
                                 result['first_air_date'] == '')):
-                        results.append(result)
+                        tmp.append(result)
                     else:
-                        logging.debug('Removing {} from results'.format(
+                        logging.debug('Invalid date for "{}", removing'.format(
                             result['title'] if 'title' in result.keys() else
                             result['name']))
+                results = tmp
+
+        # There are no more methods to reduce the options, so if there are
+        # still too many we have failed
+        if len(results) > 1:
+            logging.error('There are too many video results for torrent_name')
+            sys.exit(3)
     except MediaNotFoundInTMDBException:
         logging.info('Media not found in TMDB, it is likely audio')
         sys.exit(2)
