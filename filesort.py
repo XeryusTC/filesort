@@ -38,6 +38,14 @@ def copy_file(src, dst):
         logging.debug('New destination file: {}'.format(dst))
     src.copy(dst)
 
+def unify_case(s):
+    special_cases = ('to', 'a', 'from', 'is', 'and', 'the')
+    s = s.replace('.', ' ')
+    s = ' '.join([w.title() if w.lower() not in special_cases else w.lower()
+        for w in s.split()])
+    s = s[0].upper() + s[1:]
+    return s
+
 def sort_episode(series_name, episode, torrent_path):
     # Ensure the series directory exists
     series_dir = Path(SERIES_DIR, series_name)
