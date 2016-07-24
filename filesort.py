@@ -15,12 +15,13 @@ MOVIE_DIR  = Path('Movies/')
 SERIES_DIR = Path('TV Shows/')
 MUSIC_DIR  = Path('Music/')
 KEEP_ORIGINAL = True # Set false to remove from download directory
-AUDIO_FILES = ('wav', 'mp3', 'flac', 'ogg', 'm4a')
-VIDEO_FILES = ('mkv', 'avi', 'mp4', 'mov', 'mpeg', 'wmv', 'flv', 'm4v')
 
 ### Constants ###
 ANY_MEDIA = 0
 TV_MEDIA  = 1
+AUDIO_FILES = ('wav', 'mp3', 'flac', 'ogg', 'm4a')
+VIDEO_FILES = ('mkv', 'avi', 'mp4', 'mov', 'mpeg', 'wmv', 'flv', 'm4v')
+VIDEO_INDICATORS = ('480p', '720p', '1080p', 'HDTV')
 
 class MediaNotFoundInTMDBException(Exception):
     pass
@@ -166,6 +167,40 @@ def deluge(torrent_id, torrent_name, save_path):
         sort_episode(name, episode, torrent_path)
         logging.info('Done processing torrent')
         sys.exit(0)
+
+    # If it is not a single episode from a TV series then we can check
+    # The Movie Database to see if it is a known series or movie
+    likely_name = raw_name.lower()
+    for sep in VIDEO_INDICATORS:
+        likely_name = likely_name.split(sep, 1)[0]
+    logging.debug('Reduced name from "{}" to "{}"'.format(raw_name,
+        likely_name))
+
+    try:
+        search, name = find_media(likely_name)
+
+        # If there are a lot of results try to narrow them down by
+        # determining the date from the file
+        results = search.results
+        if results > 1:
+            date_match = re.search(re.compile(r'(\d{4})'), raw_name)
+            if date_match:
+                date = date_match.group(1)
+                for result in results:
+                    if ('release_date' in result.keys() and \
+                            (date in result['release_date'] or \
+                                result['release_date'] == '')) or \
+                        ('first_air_date' in result.keys() and \
+                            (date in result['first_air_date'] or \
+                                result['first_air_date'] == '')):
+                        results.append(result)
+                    else:
+                        logging.debug('Removing {} from results'.format(
+                            result['title'] if 'title' in result.keys() else
+                            result['name']))
+    except MediaNotFoundInTMDBException:
+        logging.info('Media not found in TMDB, it is likely audio')
+        sys.exit(2)
 
 if __name__ == '__main__':
     if len(sys.argv) != 4:
