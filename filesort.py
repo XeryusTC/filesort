@@ -103,6 +103,36 @@ def find_media(name, media=ANY_MEDIA):
 
     raise MediaNotFoundInTMDBException()
 
+def filter_results_by_name(results, orig_name):
+    """Remove results that have a longer title than the original"""
+    if len(results) <= 1:
+        return results
+
+    logging.info('Removing items from search results by name')
+    res = []
+    for result in results:
+        name = result['title'] if 'title' in result else result['name']
+        if all([w in orig_name.lower() for w in name.lower()]):
+            res.append(result)
+        else:
+            logging.debug('Mismatching name "{}", removing'.format(name))
+    return res
+
+def filter_results_by_year(results, year):
+    if len(results) <= 1:
+        return results
+
+    logging.debug('Removing items from search results by year released')
+    res = []
+    for result in results:
+        date = result['release_date'] if 'release_date' in result else \
+            result['first_air_date']
+        if year in date:
+            res.append(result)
+        else:
+            logging.debug('Invalid year for "{}", removing'.format(
+                result['title'] if 'title' in result else result['name']))
+    return res
 
 def deluge(torrent_id, torrent_name, save_path):
     # Set up logging
@@ -180,39 +210,14 @@ def deluge(torrent_id, torrent_name, save_path):
     try:
         search, name = find_media(likely_name)
 
-        results = search.results
-        # If there are a lot of results try to narrow them down by
-        # removing those which have different titles than what the original
-        tmp = []
-        for result in results:
-            name = result['title'] if 'title' in result else result['name']
-            if all([w in raw_name.lower() for w in name.lower().strip()]):
-                logging.debug('Keeping matching name "{}"'.format(name))
-                tmp.append(result)
-            else:
-                logging.debug('Mismatching name "{}", removing'.format(name))
-        result = tmp
-
+        results = filter_results_by_name(search.results, raw_name)
         # If there are still too many titles remove those with dates that
         # don't match with those in the filename
         if len(results) > 1:
             date_match = re.search(re.compile(r'(\d{4})'), raw_name)
             if date_match:
                 date = date_match.group(1)
-                tmp = []
-                for result in results:
-                    if ('release_date' in result and \
-                            (date in result['release_date'] or \
-                                result['release_date'] == '')) or \
-                        ('first_air_date' in result and \
-                            (date in result['first_air_date'] or \
-                                result['first_air_date'] == '')):
-                        tmp.append(result)
-                    else:
-                        logging.debug('Invalid date for "{}", removing'.format(
-                            result['title'] if 'title' in result.keys() else
-                            result['name']))
-                results = tmp
+                results = filter_results_by_year(results, date)
 
         # There are no more methods to reduce the options, so if there are
         # still too many we have failed
