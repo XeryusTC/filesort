@@ -299,4 +299,8 @@ if __name__ == '__main__':
                 .format(sys.argv[0]))
         sys.exit(1)
 
-    deluge(sys.argv[1], sys.argv[2], sys.argv[3])
+    try:
+        deluge(sys.argv[1], sys.argv[2], sys.argv[3])
+    except Exception as e:
+        logging.exception("Unknown error occured:")
+        raise e
