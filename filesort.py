@@ -89,31 +89,37 @@ def sort_movie(movie_name, movie_year, torrent_path):
         files = list_files(torrent_path, VIDEO_FILES)
         logging.debug('List of files: {}'.format(files))
 
+        # Remove videos that are not part of the movie
+        videos = []
+        for f in files:
+            if any(n.lower() in f.stem.lower() for n in movie_name.split()):
+                videos.append(f)
+        if len(videos) < len(files) and len(videos) > 0:
+            files = videos
+
         if len(files) == 0:
             logging.critical('No video files found in movie directory!')
             sys.exit(1)
         elif len(files) == 1:
             src_file = files[0]
-            dst_file = Path(movie_dir, movie_name + '.' + files[0].ext)
+            dst_file = Path(movie_dir, movie_name + files[0].ext)
             logging.info('Copying single file to destination: {}'.format(
                 dst_file))
             copy_file(src_file, dst_file)
-        else:
+        elif len(files) > 1:
             i = 1
             for f in files:
-                if any(name.lower() in f.stem.lower() \
-                    for name in movie_name.split()):
-                    dst_file = Path(movie_dir, movie_name + ' - CD' + str(i) +\
-                        '.' + f.ext)
-                    logging.info('Copying {} to {}'.format(f, dst_file))
-                    copy_file(f, dst_file)
-
+                dst_file = Path(movie_dir, movie_name + ' - CD' + str(i) + \
+                    f.ext)
+                logging.info('Copying part {} from {} to {}'.format(i,
+                    f, dst_file))
+                copy_file(f, dst_file)
     else:
         if torrent_path.ext not in VIDEO_FILES:
             logging.warning('Unknown video file extention: {}'.format(
                 torrent_path.ext))
         src_file = torrent_path
-        dst_file = Path(movie_dir, movie_name + '.' + torrent_path.ext)
+        dst_file = Path(movie_dir, movie_name + torrent_path.ext)
         logging.info('Copying single file to destination: {}'.format(
             dst_file))
         copy_file(src_file, dst_file)
