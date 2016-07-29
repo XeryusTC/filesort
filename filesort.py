@@ -152,6 +152,19 @@ def find_media(name, media=ANY_MEDIA):
             search.total_results, name))
         return (search, name)
 
+    # Remove words at the end of the name since they might not be related
+    # to the media
+    logging.debug('Could not find media, trucating words')
+    words = name.split()
+    while len(words) > 0:
+        words = words[:-1]
+        reduced_name = ' '.join(words)
+        response = search_method(query=reduced_name)
+        if search.total_results > 0:
+            logging.debug('Found {} results for the updated query{}'.format(
+                search.total_results, reduced_name))
+            return (search, reduced_name)
+
     raise MediaNotFoundInTMDBException()
 
 def filter_results_by_name(results, orig_name):
@@ -304,4 +317,4 @@ if __name__ == '__main__':
         deluge(sys.argv[1], sys.argv[2], sys.argv[3])
     except Exception as e:
         logging.exception("Unknown error occured:")
-        raise e
+        raise
