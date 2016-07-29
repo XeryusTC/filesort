@@ -10,6 +10,7 @@ import datetime
 
 ### Settings ###
 tmdb.API_KEY = '0ea9d4136175cd4c4ce3ad6d4a7c40fb'
+DEBUG = True
 # Target directories
 MOVIE_DIR  = Path('Movies/')
 SERIES_DIR = Path('TV Shows/')
@@ -37,7 +38,8 @@ def copy_file(src, dst):
         dst = Path(orig.parent, orig.stem + '-' + str(i) + orig.ext)
         i += 1
         logging.debug('New destination file: {}'.format(dst))
-    src.copy(dst)
+    if not DEBUG:
+        src.copy(dst)
 
 def unify_case(s):
     special_cases = ('to', 'a', 'from', 'is', 'and', 'the')
