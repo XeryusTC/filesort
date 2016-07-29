@@ -47,6 +47,11 @@ def unify_case(s):
     s = s[0].upper() + s[1:]
     return s
 
+def list_files(path, extentions):
+    files = [path.listdir('*.' + ext) for ext in extentions]
+    files = [f for sublist in files for f in sublist]
+    return files
+
 def sort_episode(series_name, episode, torrent_path):
     # Ensure the series directory exists
     series_dir = Path(SERIES_DIR, series_name)
@@ -75,6 +80,43 @@ def sort_episode(series_name, episode, torrent_path):
     logging.info('Copying single file to destination: {}'.format(
             dst_file))
     copy_file(src_file, dst_file)
+
+def sort_movie(movie_name, movie_year, torrent_path):
+    movie_dir = Path(MOVIE_DIR, movie_name + ' (' + movie_year + ')')
+    movie_dir.mkdir(True)
+
+    if torrent_path.isdir():
+        files = list_files(torrent_path, VIDEO_FILES)
+        logging.debug('List of files: {}'.format(files))
+
+        if len(files) == 0:
+            logging.critical('No video files found in movie directory!')
+            sys.exit(1)
+        elif len(files) == 1:
+            src_file = files[0]
+            dst_file = Path(movie_dir, movie_name + '.' + files[0].ext)
+            logging.info('Copying single file to destination: {}'.format(
+                dst_file))
+            copy_file(src_file, dst_file)
+        else:
+            i = 1
+            for f in files:
+                if any(name.lower() in f.stem.lower() \
+                    for name in movie_name.split()):
+                    dst_file = Path(movie_dir, movie_name + ' - CD' + str(i) +\
+                        '.' + f.ext)
+                    logging.info('Copying {} to {}'.format(f, dst_file))
+                    copy_file(f, dst_file)
+
+    else:
+        if torrent_path.ext not in VIDEO_FILES:
+            logging.warning('Unknown video file extention: {}'.format(
+                torrent_path.ext))
+        src_file = torrent_path
+        dst_file = Path(movie_dir, movie_name + '.' + torrent_path.ext)
+        logging.info('Copying single file to destination: {}'.format(
+            dst_file))
+        copy_file(src_file, dst_file)
 
 def find_media(name, media=ANY_MEDIA):
     search = tmdb.Search()
@@ -229,6 +271,14 @@ def deluge(torrent_id, torrent_name, save_path):
         if len(results) > 1:
             logging.error('There are too many video results for torrent_name')
             sys.exit(3)
+
+        result = results[0]
+        if result['media_type'] == 'movie':
+            logging.info('Media is a movie')
+            sort_movie(result['title'], result['release_date'][:4],
+                torrent_path)
+        elif result['media_type'] == 'tv':
+            logging.info('Media is a TV series')
     except MediaNotFoundInTMDBException:
         logging.info('Media not found in TMDB, it is likely audio')
         sys.exit(2)
