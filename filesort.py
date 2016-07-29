@@ -190,6 +190,8 @@ def select_newest_result_by_air_date(results):
     latest_date = datetime.datetime.strptime(latest['first_air_date'],
         '%Y-%m-%d').date()
     for result in results:
+        if 'first_air_date' not in result or result['first_air_date'] == '':
+            continue
         date = datetime.datetime.strptime(result['first_air_date'],
             '%Y-%m-%d').date()
         if date > latest_date:
