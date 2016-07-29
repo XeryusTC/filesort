@@ -15,6 +15,7 @@ DEBUG = True
 MOVIE_DIR  = Path('Movies/')
 SERIES_DIR = Path('TV Shows/')
 MUSIC_DIR  = Path('Music/')
+LOG_FILE   = Path('/tmp/filesort.log')
 KEEP_ORIGINAL = True # Set false to remove from download directory
 
 ### Constants ###
@@ -201,7 +202,7 @@ def select_newest_result_by_air_date(results):
 
 def deluge(torrent_id, torrent_name, save_path):
     # Set up logging
-    logging.basicConfig(filename='/tmp/filesort.log', level=logging.DEBUG)
+    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)
 
     logging.info('Processing torrent from deluge {}: {} in {}'.format(
         torrent_id, torrent_name, save_path))
