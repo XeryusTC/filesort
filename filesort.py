@@ -134,6 +134,19 @@ def filter_results_by_year(results, year):
                 result['title'] if 'title' in result else result['name']))
     return res
 
+def select_newest_result_by_air_date(results):
+    logging.debug('Selecting item based on its air date')
+    latest = results[0]
+    latest_date = datetime.datetime.strptime(latest['first_air_date'],
+        '%Y-%m-%d').date()
+    for result in results:
+        date = datetime.datetime.strptime(result['first_air_date'],
+            '%Y-%m-%d').date()
+        if date > latest_date:
+            latest = result
+            latest_date = date
+    return latest
+
 def deluge(torrent_id, torrent_name, save_path):
     # Set up logging
     logging.basicConfig(filename='/tmp/filesort.log', level=logging.DEBUG)
@@ -161,15 +174,7 @@ def deluge(torrent_id, torrent_name, save_path):
 
             # Reduce the results from the TMDB search to one final answer
             # Use the newest series found
-            latest = search.results[0]
-            latest_date = datetime.datetime.strptime(latest['first_air_date'],
-                '%Y-%m-%d').date()
-            for result in search.results:
-                date = datetime.datetime.strptime(result['first_air_date'],
-                    '%Y-%m-%d').date()
-                if date > latest_date:
-                    latest = result
-                    latest_date = date
+            latest = select_newest_result_by_air_date(search.results)
             logging.debug('TMDB returned: {}, original was: {}'.format(
                 latest['name'], series_name))
             name = latest['name']
