@@ -69,7 +69,7 @@ def sort_episode(series_name, episode, torrent_path):
             logging.warning('Unknown video file extention: {}'.format(
                 torrent_path.ext))
         src_file = torrent_path
-        dst_file = Path(series_dir, series_name, ' - ', episode,
+        dst_file = Path(series_dir, series_name + ' - ' + episode + \
             torrent_path.ext)
 
     logging.info('Copying single file to destination: {}'.format(
