@@ -73,7 +73,7 @@ def sort_episode(series_name, episode, torrent_path):
         dst_file = Path(series_dir,
             series_name + ' - ' + episode + files[0].ext)
     else:
-        if torrent_path.ext not in VIDEO_FILES:
+        if torrent_path.ext.replace('.', '') not in VIDEO_FILES:
             logging.warning('Unknown video file extention: {}'.format(
                 torrent_path.ext))
         src_file = torrent_path
@@ -154,7 +154,7 @@ def find_media(name, media=ANY_MEDIA):
 
     # Remove words at the end of the name since they might not be related
     # to the media
-    logging.debug('Could not find media, trucating words')
+    logging.debug('Could not find media, truncating words')
     words = name.split()
     while len(words) > 0:
         words = words[:-1]
@@ -228,7 +228,8 @@ def deluge(torrent_id, torrent_name, save_path):
         raw_name = torrent_path.stem
 
     # Test if this is a TV series
-    serie_re = re.compile(r'([\w.]+)(?=(S\d{2}E\d{2}|\d{1,2}x{\d{1,2}))(\2)*')
+    serie_re = re.compile(
+        r'([\w.]+)(?=([sS]\d{2}[eE]\d{2}|\d{1,2}x{\d{1,2}))(\2)*')
     series_match = serie_re.match(raw_name)
     if series_match:
         series_name = series_match.group(1).replace('.', ' ').strip()
@@ -240,7 +241,8 @@ def deluge(torrent_id, torrent_name, save_path):
 
             # Reduce the results from the TMDB search to one final answer
             # Use the newest series found
-            latest = select_newest_result_by_air_date(search.results)
+            results = filter_results_by_name(search.results, raw_name)
+            latest = select_newest_result_by_air_date(results)
             logging.debug('TMDB returned: {}, original was: {}'.format(
                 latest['name'], series_name))
             name = latest['name']
